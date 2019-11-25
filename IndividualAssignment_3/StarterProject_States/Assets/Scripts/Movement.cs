@@ -105,48 +105,31 @@ public class Movement : MonoBehaviour
 
         // Use the statemachine
         StateMachine(currentState);
-
     
         // Can enter the climbing state from any state
-        // You may want to move this depending on the states you add
         if (coll.onWall && Input.GetButton("Fire2") && canMove)
         {
-            // Change state
-            currentState = PlayerState.CLIMBING;
-
-            // Flips sprite based on which wall
-            if(side != coll.wallSide)
-                anim.Flip(side*-1);
-            
             // Bools for movement and animation
             wallGrab = true;
             wallSlide = false;
+
+            // Change state
+            currentState = PlayerState.CLIMBING;
         }
 
         // Used when no longer on a wall
         if (Input.GetButtonUp("Fire2") || !coll.onWall || !canMove)
         {
+            // Bools for movement and animation
             wallGrab = false;
             wallSlide = false;
         }
 
         // When on the ground and not dashing
-        // You might want to move these to a state
         if (coll.onGround && !isDashing)
         {
             wallJumped = false;
             GetComponent<BetterJumping>().enabled = true;
-        }
-        
-        // Old Climbing code
-        if (wallGrab && !isDashing)
-        {
-            // All this movement code is now in the CLIMBING state
-        }
-        else
-        {
-            // Moved this to the leave condition in the CLIMBING state
-            //rb.gravityScale = 3;
         }
 
         // When on the wall and not on the gorund
@@ -157,13 +140,9 @@ public class Movement : MonoBehaviour
             {
                 currentState = PlayerState.ON_WALL;
             }
-
-            // Maybe there could be an ON_WALL state?
-            // Try it out!
         }
 
         // If not on the wall and on the ground
-        // Maybe move this to IDLE? 
         if (!coll.onWall || coll.onGround)
             wallSlide = false;
 
@@ -179,6 +158,7 @@ public class Movement : MonoBehaviour
             currentState = PlayerState.DASHING;
         }
 
+        // If on wall but not on ground jump when hitting the sapce bar
         if (coll.onWall && !coll.onGround && Input.GetButtonDown("Jump"))
         {
             currentState = PlayerState.WALL_JUMPING;
@@ -187,7 +167,6 @@ public class Movement : MonoBehaviour
         // When you land on the ground
         if (coll.onGround && !groundTouch)
         {   
-            groundTouch = true;
             currentState = PlayerState.FALLING;
         }
 
@@ -196,7 +175,6 @@ public class Movement : MonoBehaviour
         {
             groundTouch = false;
         }
-
 
         // Return if on a wall
         if (wallGrab || wallSlide || !canMove)
@@ -240,6 +218,8 @@ public class Movement : MonoBehaviour
 
                 // Use input direction to move and change the animation
                 rb.velocity = new Vector2(inputDirection.x * speed, rb.velocity.y);
+
+                // Upadate animation
                 anim.SetHorizontalMovement(xInput, yInput, rb.velocity.y);
             
                 // Condition: No horizontal input, go to IDLE state
@@ -251,10 +231,11 @@ public class Movement : MonoBehaviour
             break;
             
             case PlayerState.CLIMBING:
-            
+
                 // Stop gravity
                 rb.gravityScale = 0;
 
+                // Upadate animation
                 anim.SetHorizontalMovement(xInput, yInput, rb.velocity.y);
 
                 // Limit horizontal movement
@@ -276,14 +257,17 @@ public class Movement : MonoBehaviour
                     // Reset Gravity
                     rb.gravityScale = 3;
                 }
-        
-            break;
+
+                // Flips sprite based on which wall
+                if (side != coll.wallSide)
+                    anim.Flip(side * -1);
+
+                break;
 
             // More states here pls
 
             case PlayerState.ON_WALL:
 
-                Debug.Log("on wall");
                 // Flip if needed
                 if (coll.wallSide != side)
                     anim.Flip(side * -1);
@@ -310,7 +294,6 @@ public class Movement : MonoBehaviour
 
             case PlayerState.JUMPING:
 
-                Debug.Log("jump");
                 // Sets the jump animation
                 anim.SetTrigger("jump");
 
@@ -334,7 +317,7 @@ public class Movement : MonoBehaviour
 
             case PlayerState.FALLING:
 
-                Debug.Log("falling");
+                groundTouch = true;
                 hasDashed = false;
                 isDashing = false;
 
@@ -346,8 +329,6 @@ public class Movement : MonoBehaviour
             break;
 
             case PlayerState.DASHING:
-
-                Debug.Log("dashing");
                 // Graphics effects
                 Camera.main.transform.DOComplete();
                 Camera.main.transform.DOShakePosition(.2f, .5f, 14, 90, false, true);
@@ -372,7 +353,6 @@ public class Movement : MonoBehaviour
 
             case PlayerState.WALL_JUMPING:
 
-                Debug.Log("walljump");
                 // Flip sprite if needed
                 if ((side == 1 && coll.onRightWall) || side == -1 && !coll.onRightWall)
                 {
